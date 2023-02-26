@@ -6,9 +6,12 @@
 package ibase
 
 import (
+	"bytes"
+	"crypto/ed25519"
 	"errors"
 	"fmt"
 
+	"github.com/cxio/cbase/paddr"
 	"github.com/cxio/locale"
 	"github.com/cxio/script/instor"
 	"golang.org/x/tools/container/intsets"
@@ -30,6 +33,7 @@ const (
 	StackMax = 256 // 数据栈大小
 	GotoMax  = 3   // 跳转次数限额（包含）
 	JumpMax  = 9   // 嵌入次数限额（包含）
+	ExprEnd  = -1  // 表达式结束标志
 )
 
 // 3个存值区标识值。
@@ -52,6 +56,9 @@ type Script = instor.Script
 // 多重签名序位集。
 // 注：用于 MULSIG 指令。
 type SigIdSet = intsets.Sparse
+
+// 公钥类型引用。
+type PubKey = ed25519.PublicKey
 
 // 中间数据体
 // 脚本内数据（缓存）和外部世界的中间媒介。
@@ -149,16 +156,21 @@ func (e *Envs) TxInOutItem(n int) any {
 	// return v
 }
 
+// 设置多重签名序位。
+// ns 签名的公钥地址在多重公钥列表中的序位集。
+// 注意：
+// 不同的签名集各自独立，因此每次都应当新建一个存储集。
+// 即：外部仅能检查最近的签名序位情况。
+func (e *Envs) SetMulSig(ns ...int) {
+	e.mulSigs = new(SigIdSet)
+
+	for _, n := range ns {
+		e.mulSigs.Insert(n)
+	}
+}
+
 // 检查目标序位是否签名。
 func (e *Envs) MulSigN(n int) bool {
-	if e.mulSigs == nil {
-		e.mulSigs = new(SigIdSet)
-		// 初始化：
-		// list := ...
-		// for _, i := range list {
-		// 	e.mulSigs.Insert(i)
-		// }
-	}
 	return e.mulSigs.Has(n)
 }
 
@@ -533,6 +545,98 @@ func (a *Actuator) ReturnPut(to int, vs []any) {
  * 接口函数
  ******************************************************************************
  */
+
+// 提取多重签名的公钥集。
+// 即去除脚本中提供的公钥上前置的序位标识。
+// 返回：序位集，公钥集。
+func MulPubKeys(pbks [][]byte) ([]int, []PubKey) {
+	n := len(pbks)
+	ids := make([]int, n)
+	pks := make([]PubKey, n)
+
+	for i, pk := range pbks {
+		ids[i] = int(pk[0])
+		// 直接引用，
+		// 因为单脚本验证为顺序执行，无并发被修改的风险。
+		pks[i] = PubKey(pk[1:])
+	}
+	return ids, pks
+}
+
+// 兑奖检查。
+// 返回合法兑奖的数量（聪）。
+func CheckAward(h int) int {
+	//...
+	return 0
+}
+
+// 单签名验证。
+// ver 为版本值。便于安全升级。
+// 当前采用ed25519签名认证。
+func CheckSig(ver int, pubkey PubKey, msg, sig []byte) bool {
+	// ver: 1
+	return ed25519.Verify(pubkey, msg, sig)
+}
+
+// 多签名验证。
+// ver 为版本值。便于安全升级。
+// 当前采用ed25519签名认证。
+func CheckSigs(ver int, pubkeys []PubKey, msg []byte, sigs [][]byte) bool {
+	// ver: 1
+	for i, pk := range pubkeys {
+		if !ed25519.Verify(pk, msg, sigs[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+// 系统内置验证（单签名）。
+// 解锁数据：
+// - ver 为版本值。
+// - pubkey 用户的签名公钥。
+// - msg 签名的消息：脚本ID（4+4+2）。
+// - sig 用户的签名数据。
+// - pkaddr 付款者的公钥地址。
+// 注记：
+// 需要对比目标公钥地址和计算出来的是否相同。
+func SingleCheck(ver int, pubkey PubKey, msg, sig, pkaddr []byte) bool {
+	pka := paddr.Hash([]byte(pubkey), nil)
+
+	if !bytes.Equal(pka, pkaddr) {
+		return false
+	}
+	return CheckSig(ver, pubkey, msg, sig)
+}
+
+// 系统内置验证（多重签名）。
+// 公钥条目和公钥地址条目都已前置1字节的序位值（在公钥地址清单中的位置）。
+// 解锁数据：
+// - ver 为版本值。
+// - msg 签名消息：脚本ID（4+4+2）。
+// - sigs 签名数据集。
+// - pks 签名公钥集（与签名集成员一一对应）。
+// - pkhs 未签名公钥地址集。
+// - pkaddr 多重签名公钥地址（付款者）。
+// - env 环境对象引用（添加信息）。
+// 注记：
+// 需要先对比两个来源的公钥地址是否相同。
+func MultiCheck(ver int, msg []byte, sigs, pks, pkhs [][]byte, pkaddr []byte, env *Envs) (bool, error) {
+	pka, err := paddr.MulHash(pks, pkhs)
+
+	if err != nil {
+		return false, err
+	}
+	// 已含前置n/T配比对比。
+	if !bytes.Equal(pka, pkaddr) {
+		return false, nil
+	}
+	ids, _pks := MulPubKeys(pks)
+	// 环境赋值
+	env.SetMulSig(ids...)
+
+	return CheckSigs(ver, _pks, msg, sigs), nil
+}
 
 //
 // 工具辅助

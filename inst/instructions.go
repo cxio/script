@@ -56,7 +56,7 @@ type Wrapper = ibase.Wrapper
 type Insted = instor.Insted
 
 // 公钥类型引用。
-type PubKey = cbase.PubKey
+type PubKey = ibase.PubKey
 
 // 出错提示信息。
 var (
@@ -2540,7 +2540,7 @@ func _SYS_AWARD(a *Actuator, aux []any, _ any, vs ...any) []any {
 	a.Revert()
 	h := vs[0].(Int)
 
-	return []any{Int(cbase.CheckAward(int(h)))}
+	return []any{Int(ibase.CheckAward(int(h)))}
 }
 
 // 指令：SYS_NULL 断点标记
@@ -2684,7 +2684,7 @@ func _FN_CHECKSIG(a *Actuator, aux []any, _ any, vs ...any) []any {
 	pbk := vs[1].(Bytes)
 	sig := vs[0].(Bytes)
 
-	return []any{cbase.CheckSig(a.Ver, PubKey(pbk), a.SpentMsg(flg), sig)}
+	return []any{ibase.CheckSig(a.Ver, PubKey(pbk), a.SpentMsg(flg), sig)}
 }
 
 // 多签名验证。
@@ -2702,7 +2702,11 @@ func _FN_MCHECKSIG(a *Actuator, aux []any, _ any, vs ...any) []any {
 	if len(pbks) != len(sigs) {
 		panic(errMChkSig)
 	}
-	return []any{cbase.CheckSigs(a.Ver, cbase.MulPubKeys(pbks), a.SpentMsg(flg), sigs)}
+	ids, pks := ibase.MulPubKeys(pbks)
+	// 序位登记
+	a.SetMulSig(ids...)
+
+	return []any{ibase.CheckSigs(a.Ver, pks, a.SpentMsg(flg), sigs)}
 }
 
 // 计算哈希摘要（224位）。
@@ -2905,7 +2909,7 @@ func instCall(a *Actuator) []any {
 // 用于构造表达式执行器。
 func exprNext(a *Actuator) (int, []any) {
 	if a.Script.End() {
-		return cbase.ExprEnd, nil
+		return ibase.ExprEnd, nil
 	}
 	return a.Script.Code(), instCall(a)
 }

@@ -10,8 +10,8 @@ package expr
 import (
 	"fmt"
 
-	"github.com/cxio/cbase"
 	"github.com/cxio/locale"
+	"github.com/cxio/script/ibase"
 	"github.com/cxio/script/icode"
 )
 
@@ -27,7 +27,7 @@ const (
 )
 
 // 表达式结束标志。
-const exprEnd = cbase.ExprEnd
+const exprEnd = ibase.ExprEnd
 
 // 表达式单元接口
 // 统一采用float64计算以保持精度。
