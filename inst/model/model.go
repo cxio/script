@@ -13,6 +13,7 @@ import (
 	"github.com/cxio/cbase"
 	"github.com/cxio/cbase/chash"
 	"github.com/cxio/locale"
+	"github.com/cxio/script/ibase"
 	"github.com/cxio/script/icode"
 	"github.com/cxio/script/instor"
 )
@@ -24,7 +25,7 @@ var (
 
 // 基本消息定义。
 var (
-	neverToHere   = _T("不应该运行到这，请检查源码错误")
+	neverToHere   = ibase.ErrToHere
 	modelMatchBan = _T("模式指令本身不能作为普通指令构造匹配")
 	typeBadnum    = _T("类型值定义错误")
 )
@@ -37,7 +38,7 @@ const (
 	defaultIndex = -1
 
 	// 关联数据哈希长度
-	HashSize = chash.SizeModel
+	HashSize = chash.Size160
 )
 
 // 引用：整数类型
@@ -539,60 +540,60 @@ func _lumpBlockCheck(m, s []byte) (int, int, bool) {
  * 值类型判断
  * for !{Type}(1)
  * 参数：
- * i 为目标源脚本指令的指令码。
+ * c 为目标源脚本指令的指令码。
  ******************************************************************************
  */
 
-func _isBool(i int) bool {
-	return i == icode.TRUE || i == icode.FALSE
+func _isBool(c int) bool {
+	return c == icode.TRUE || c == icode.FALSE
 }
 
-func _isInt(i int) bool {
-	return i >= icode.Uint8n && i <= icode.Int64
+func _isInt(c int) bool {
+	return icode.Uint8n <= c && c <= icode.Uint63
 }
 
-func _isByte(i int) bool {
-	return i == icode.Byte
+func _isByte(c int) bool {
+	return c == icode.Byte
 }
 
-func _isRune(i int) bool {
-	return i == icode.Rune
+func _isRune(c int) bool {
+	return c == icode.Rune
 }
 
-func _isBigInt(i int) bool {
-	return i == icode.BigInt
+func _isBigInt(c int) bool {
+	return c == icode.BigInt
 }
 
-func _isFloat(i int) bool {
-	return i == icode.Float32 || i == icode.Float64
+func _isFloat(c int) bool {
+	return c == icode.Float32 || c == icode.Float64
 }
 
-func _isBytes(i int) bool {
-	return i == icode.DATA8 || i == icode.DATA16
+func _isBytes(c int) bool {
+	return c == icode.DATA8 || c == icode.DATA16
 }
 
-func _isString(i int) bool {
-	return i == icode.TEXT8 || i == icode.TEXT16
+func _isString(c int) bool {
+	return c == icode.TEXT8 || c == icode.TEXT16
 }
 
-func _isRegExp(i int) bool {
-	return i == icode.RegExp
+func _isRegExp(c int) bool {
+	return c == icode.RegExp
 }
 
-func _isTime(i int) bool {
-	return i == icode.DATE
+func _isTime(c int) bool {
+	return c == icode.DATE
 }
 
-func _isScript(i int) bool {
-	return i == icode.CODE
+func _isScript(c int) bool {
+	return c == icode.CODE
 }
 
-func _isNumber(i int) bool {
-	return _isInt(i) || _isFloat(i)
+func _isNumber(c int) bool {
+	return _isInt(c) || _isFloat(c)
 }
 
-func _isModel(i int) bool {
-	return i == icode.MODEL
+func _isModel(c int) bool {
+	return c == icode.MODEL
 }
 
 //
@@ -749,6 +750,7 @@ func hashData(code []byte) *Instor {
 // a 为源脚本的指令信息包。
 // z 为模式指令的信息包。
 // flag 为局部通配标识（适用 ?(1) 指令）。
+// ver 为版本信息。
 func test(a, z *Instor, flag wildpart, ver int) (int, int, bool) {
 	if a.Code != z.Code {
 		return 0, z.Size, flag.isOption()
@@ -798,6 +800,7 @@ func argEqual(a, z []byte) bool {
 // target 为目标源脚本指令的关联数据。
 // script 为当前匹配要求，nil 表示忽略（通配）。
 // hash 是否为哈希比较。
+// ver 为版本信息。
 func dataEqual(target, script any, hash bool, ver int) bool {
 	if script == nil {
 		return true

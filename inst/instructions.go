@@ -3674,7 +3674,7 @@ func init() {
 	// --------------------------------------
 	__InstSet[icode.Capture] = Instx{_Capture, 0}
 	__InstSet[icode.Bring] = Instx{_Bring, 0}
-	__InstSet[icode.Assign] = Instx{_ScopeAdd, 0}
+	__InstSet[icode.ScopeAdd] = Instx{_ScopeAdd, 0}
 	__InstSet[icode.ScopeVal] = Instx{_ScopeVal, 0}
 	__InstSet[icode.LoopVal] = Instx{_LoopVal, 0}
 

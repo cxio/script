@@ -34,7 +34,7 @@ const (
 const (
 	Capture  = 20 + iota
 	Bring    // 21
-	Assign   // 22
+	ScopeAdd // 22
 	ScopeVal // 23
 	LoopVal  // 24
 )
