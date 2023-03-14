@@ -126,6 +126,7 @@ var EnvNames = []string{
 const (
 	OutAmount      = iota // 币金数量
 	OutReceiver           // 接收者
+	OutCreator            // 凭信创建者
 	OutDescription        // 凭信描述
 	OutCount              // 凭信转移计数
 	OutTitle              // 证据标题
@@ -140,6 +141,7 @@ const (
 var OutNames = []string{
 	OutAmount:      "Amount",
 	OutReceiver:    "Receiver",
+	OutCreator:     "Creator",
 	OutDescription: "Description",
 	OutCount:       "Count",
 	OutTitle:       "Title",

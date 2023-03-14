@@ -600,6 +600,7 @@ func CheckSigs(ver int, pubkeys []PubKey, msg []byte, sigs [][]byte) bool {
 // - pkaddr 付款者的公钥地址。
 // 注记：
 // 需要对比目标公钥地址和计算出来的是否相同。
+// 不含金额的合法性检查，它们在前阶环节执行。
 func SingleCheck(ver int, pubkey PubKey, msg, sig, pkaddr []byte) bool {
 	pka := paddr.Hash([]byte(pubkey), nil)
 
@@ -613,7 +614,7 @@ func SingleCheck(ver int, pubkey PubKey, msg, sig, pkaddr []byte) bool {
 // 公钥条目和公钥地址条目都已前置1字节的序位值（在公钥地址清单中的位置）。
 // 解锁数据：
 // - ver 为版本值。
-// - msg 签名消息：脚本ID（4+4+2）。
+// - msg 签名消息。
 // - sigs 签名数据集。
 // - pks 签名公钥集（与签名集成员一一对应）。
 // - pkhs 未签名公钥地址集。
@@ -621,6 +622,7 @@ func SingleCheck(ver int, pubkey PubKey, msg, sig, pkaddr []byte) bool {
 // - env 环境对象引用（添加信息）。
 // 注记：
 // 需要先对比两个来源的公钥地址是否相同。
+// 不含金额的合法性检查。
 func MultiCheck(ver int, msg []byte, sigs, pks, pkhs [][]byte, pkaddr []byte, env *Envs) (bool, error) {
 	pka, err := paddr.MulHash(pks, pkhs)
 

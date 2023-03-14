@@ -517,7 +517,7 @@ func _PEEKS(a *Actuator, aux []any, _ any, vs ...any) []any {
 // 指令： SLICE 局部切片
 // 实参1：目标切片。
 // 实参2：起始下标，支持负数从末尾算起。
-// 实参3：结束下标（不含），同上支持负数。0值表示末尾之后。
+// 实参3：结束下标（不含），同上支持负数。nil值表示末尾之后。
 // 返回： 一个新切片。
 func _SLICE(a *Actuator, _ []any, _ any, vs ...any) []any {
 	a.Revert()
@@ -2330,11 +2330,11 @@ func _MATCH(a *Actuator, aux []any, _ any, vs ...any) []any {
 
 	switch aux[0].(int) {
 	case 'g':
-		return []any{ibase.MatchAll(vs[0], re)}
+		return []any{matchAll(vs[0], re)}
 	case 'G':
-		return []any{ibase.MatchEvery(vs[0], re)}
+		return []any{matchEvery(vs[0], re)}
 	}
-	all := ibase.Match(vs[0], re)
+	all := match(vs[0], re)
 
 	if len(all) > 1 {
 		return []any{all}
@@ -2549,7 +2549,7 @@ func _SYS_AWARD(a *Actuator, aux []any, _ any, vs ...any) []any {
 // 返回：无。
 func _SYS_NULL(a *Actuator, _ []any, _ any, _ ...any) []any {
 	a.Revert()
-	a.Script.Postnull()
+	a.Script.PostNull()
 	return nil
 }
 
@@ -3001,7 +3001,7 @@ func runEmbed(a *Actuator) {
 
 // 运行顶层代码。
 // 返回值：EXIT 的返回值。
-func runScript(a *Actuator) (x any) {
+func ScriptRun(a *Actuator) (x any) {
 	defer func() {
 		switch v := recover().(type) {
 		case nil: // normal
@@ -3510,7 +3510,7 @@ func newCopy[T any](s []T, ext int) []T {
 // 查找首个正则匹配。
 // 返回一个切片，其中首个成员为完整匹配，后续为可能有的子匹配。
 // 目标 target 支持字符串或字节序列。
-func Match(target any, re *regexp.Regexp) []any {
+func match(target any, re *regexp.Regexp) []any {
 	if x, ok := target.(string); ok {
 		return toAnys(re.FindStringSubmatch(x))
 	}
@@ -3520,7 +3520,7 @@ func Match(target any, re *regexp.Regexp) []any {
 // 查找全部匹配。
 // 仅查找完整匹配的结果，子匹配会被简单忽略。
 // 目标 target 支持字符串或字节序列。
-func MatchAll(target any, re *regexp.Regexp) []any {
+func matchAll(target any, re *regexp.Regexp) []any {
 	if x, ok := target.(string); ok {
 		return toAnys(re.FindAllString(x, -1))
 	}
@@ -3531,7 +3531,7 @@ func MatchAll(target any, re *regexp.Regexp) []any {
 // 会检查每一个匹配的子匹配，返回包含每组匹配的子匹配的一个二维切片。
 // 如果子匹配式本身就不存在，每组匹配依然是一个切片结果（即整体依然为二维）。
 // 目标 target 支持字符串或字节序列。
-func MatchEvery(target any, re *regexp.Regexp) []any {
+func matchEvery(target any, re *regexp.Regexp) []any {
 	if x, ok := target.(string); ok {
 		return toAnys(re.FindAllStringSubmatch(x, -1))
 	}

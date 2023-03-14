@@ -112,7 +112,7 @@ func (s *Script) Next(n int) {
 // 设置NULL点。
 // 将当前内部偏移值设置为NULL点。
 // 注：SYS_NULL 指令专用。
-func (s *Script) Postnull() {
+func (s *Script) PostNull() {
 	s.nullpos = s.offset
 }
 
