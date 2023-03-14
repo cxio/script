@@ -24,14 +24,6 @@ func GetInstx(i int, data any) Instx {
 	return __instExtens[i][data.(int)]
 }
 
-// 返回扩展指令自身占用长度。
-// i 为扩展模块索引（EX_INST[i]）。
-// 注记：
-// 仿模块逻辑，当前仅统一占用1字节定义。
-func Size(i int) int {
-	return 1
-}
-
 // 通用扩展配置清单。
 // 注：参考 mox 实现。
 var __instExtens = map[int]mapInst{

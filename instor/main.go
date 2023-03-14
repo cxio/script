@@ -12,9 +12,6 @@ import (
 	"time"
 
 	"github.com/cxio/script/icode"
-	"github.com/cxio/script/inst/instex"
-	"github.com/cxio/script/inst/ipriv"
-	"github.com/cxio/script/inst/mox"
 )
 
 // 布尔类型
@@ -129,7 +126,7 @@ func (s *Script) New() *Script {
 	buf := make([]byte, len(s.source))
 	copy(buf, s.source)
 
-	return &Script{buf, s.offset}
+	return &Script{buf, s.offset, 0}
 }
 
 // 指令信息包。
@@ -289,7 +286,7 @@ func _Rune(code []byte) *Insted {
 // 附参：4 bytes，浮点数
 func _Float32(code []byte) *Insted {
 	ins := Raw(code)
-	v := Rune(binary.BigEndian.Uint32(ins.Data))
+	v := binary.BigEndian.Uint32(ins.Data)
 
 	return &Insted{
 		ins.Code,
@@ -1038,7 +1035,8 @@ func instArg2Bytes(code []byte) *Instor {
 // 单附参（~）&字节数据。
 func instArgXBytes(code []byte) *Instor {
 	c := int(code[0])
-	n, len := int(binary.Uvarint(code[1:]))
+	_n, len := binary.Uvarint(code[1:])
+	n := int(_n)
 	len++ // for c
 
 	return &Instor{c, [][]byte{code[1:len]}, code[len : len+n], len + n}
@@ -1121,7 +1119,7 @@ func instArg2_1(code []byte) *Instor {
 // 数据：即扩展模块自身定义。
 func moxInstor(code []byte) *Instor {
 	c := int(code[0])
-	n := mox.Size(int(code[1]))
+	n := MoxSize(int(code[1]))
 	d := code[2 : 2+n]
 
 	return &Instor{c, [][]byte{code[1:2]}, d, 2 + n}
@@ -1137,7 +1135,7 @@ func extenInstor(code []byte) *Instor {
 	i := binary.BigEndian.Uint16(code[1:3])
 
 	var d []byte
-	n := instex.Size(int(i))
+	n := ExtSize(int(i))
 
 	if n > 0 {
 		d = code[3 : 3+n]
@@ -1153,7 +1151,7 @@ func privInstor(code []byte) *Instor {
 	i := binary.BigEndian.Uint16(code[1:3])
 
 	var d []byte
-	n := ipriv.Size(int(i))
+	n := PrivSize(int(i))
 
 	if n > 0 {
 		d = code[3 : 3+n]

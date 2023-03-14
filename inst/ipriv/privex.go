@@ -20,12 +20,6 @@ func GetInstx(i int, data any) Instx {
 	return __exprivSet[i]
 }
 
-// 返回扩展自身占用的大小。
-// 注：暂以直接指令扩展，因此不占用额外空间。
-func Size(i int) int {
-	return 0
-}
-
 // 扩展指令配置集。
 // - 键：目标指令索引。
 // - 值：目标指令配置对。

@@ -27,14 +27,6 @@ func GetInstx(i int, data any) Instx {
 	return __moxExtens[i][data.(int)]
 }
 
-// 返回扩展模块自身占用长度。
-// i 为扩展模块索引（MO_X[i]）。
-// 注记：
-// 当前统一仅占用1字节用于方法索引。
-func Size(i int) int {
-	return 1
-}
-
 // 扩展模块清单配置。
 // - 键：模块索引。
 // - 值：映射指令配置集。
