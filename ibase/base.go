@@ -86,7 +86,7 @@ type Envs struct {
 // size 为当前交易输出集大小。
 // 注记：
 // 简单数据初始即赋值，复杂数据惰性处理。
-func NewEnvs(pkaddr []byte, isMsig bool, size int) *Envs {
+func NewEnvs(pkaddr []byte, size int) *Envs {
 	return &Envs{
 		env:    make(map[int]any),
 		outs:   make([]map[int]any, size),
@@ -108,7 +108,7 @@ func (e *Envs) EnvItem(n int) any {
 	if v, ok := e.env[n]; ok {
 		return v
 	}
-	// v := ...
+	// v := ... // 即时调用系统接口获取
 	// e.env[n] = v
 	// return v
 }
@@ -127,7 +127,7 @@ func (e *Envs) TxOutItem(i, n int) any {
 	if v, ok := out[n]; ok {
 		return v
 	}
-	// v := ...
+	// v := ... // 即时调用系统接口获取
 	// outs[n] = v
 	// return v
 }
@@ -139,7 +139,7 @@ func (e *Envs) TxInItem(n int) any {
 	if v, ok := e.in[n]; ok {
 		return v
 	}
-	// v := ...
+	// v := ... // 即时调用系统接口获取
 	// e.in[n] = v
 	// return v
 }
@@ -151,16 +151,15 @@ func (e *Envs) TxInOutItem(n int) any {
 	if v, ok := e.inout[n]; ok {
 		return v
 	}
-	// v := ...
+	// v := ... // 即时调用系统接口获取
 	// e.inout[n] = v
 	// return v
 }
 
 // 设置多重签名序位。
 // ns 签名的公钥地址在多重公钥列表中的序位集。
-// 注意：
-// 不同的签名集各自独立，因此每次都应当新建一个存储集。
-// 即：外部仅能检查最近的签名序位情况。
+// 注：
+// 不同的签名集各自独立，因此每次都会新建一个存储集。
 func (e *Envs) SetMulSig(ns ...int) {
 	e.mulSigs = new(SigIdSet)
 
