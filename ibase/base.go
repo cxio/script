@@ -262,7 +262,6 @@ func (a *Actuator) fromScript(src Script) map[int]any {
 
 	buf[instor.XFromSource] = src.New().Past()
 	buf[instor.XFromOffset] = src.Offset()
-	buf[instor.XFromLength] = len(src.Source())
 	//... 后续添加
 
 	return buf

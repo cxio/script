@@ -129,6 +129,21 @@ func (s *Script) New() *Script {
 	return &Script{buf, s.offset, 0}
 }
 
+// 整数类型约束。
+type Integer interface {
+	Int | Rune | Byte
+}
+
+// 数值类型约束。
+type Number interface {
+	Integer | Float
+}
+
+// 切片成员类型约束。
+type Itemer interface {
+	any | Byte | Rune | Int | Float | String
+}
+
 // 指令信息包。
 // 附参和关联数据已经解析为指令特定的类型。
 type Insted struct {

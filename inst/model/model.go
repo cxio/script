@@ -399,7 +399,7 @@ func _BlockCheck(t *State, s, m []byte) (int, int, bool) {
 	var data []any
 
 	if ins0.Code == ins1.Code {
-		data, ok = Check(ins0.Data.([]byte), ins1.Data.([]byte))
+		data, ok = Check(ins0.Data, ins1.Data, t.ver)
 		t.PushData(data...)
 	}
 	return ins0.Size, ins1.Size, ok
@@ -478,14 +478,14 @@ func _lumpWithinFloat(m, s []byte) (int, int, bool) {
 // 注：匹配结果无需保存。
 func _lumpRE(m, s []byte) (int, int, bool) {
 	ins1 := instor.Raw(m)
-	fg := ins1.Args[0].(byte)
+	fg := ins1.Args[0][0]
 
 	if fg&0b1000_0000 == 0 {
 		// 任意跳过，
 		// 目标合法性待正式匹配时处理。
 		return instor.Raw(s).Size, ins1.Size, true
 	}
-	re := regexp.MustCompile(string(ins1.Data.([]byte)))
+	re := regexp.MustCompile(string(ins1.Data))
 	ins0 := instor.Get(s)
 	var data []any
 
@@ -530,10 +530,7 @@ func _lumpBlockCheck(m, s []byte) (int, int, bool) {
 	ins0 := instor.Raw(s)
 	ins1 := instor.Raw(m)
 
-	s = ins0.Data.([]byte)
-	m = ins1.Data.([]byte)
-
-	return ins0.Size, ins1.Size, ins0.Code == ins1.Code && lumpBlockTest(s, m)
+	return ins0.Size, ins1.Size, ins0.Code == ins1.Code && lumpBlockTest(ins0.Data, ins1.Data)
 }
 
 /*
@@ -801,7 +798,7 @@ func argEqual(a, z []byte) bool {
 // script 为当前匹配要求，nil 表示忽略（通配）。
 // hash 是否为哈希比较。
 // ver 为版本信息。
-func dataEqual(target, script any, hash bool, ver int) bool {
+func dataEqual(target, script []byte, hash bool, ver int) bool {
 	if script == nil {
 		return true
 	}
@@ -1040,8 +1037,8 @@ func instArgXBytes(code []byte, flag wildpart) *Instor {
 		size += len
 
 		if !flag.wildData() {
-			v = code[size : size+n]
-			size += n
+			v = code[size : size+int(n)]
+			size += int(n)
 		}
 		a = code[1 : 1+len]
 	}

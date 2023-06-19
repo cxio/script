@@ -123,6 +123,15 @@ type Script = instor.Script
 // 正则表达式
 type RegExp = instor.RegExp
 
+// 数值类型约束
+type Number = instor.Number
+
+// 整数类型约束
+type Integer = instor.Integer
+
+// 切片成员类型约束
+type Itemer = instor.Itemer
+
 // 字典类型。
 // 注：与切片类型一起被归类为集合。
 type Dict map[string]any
@@ -149,21 +158,6 @@ const (
 	_CONTINUE_ cease = iota // 默认下一轮
 	_BREAK_
 )
-
-// 整数类型约束。
-type Integer interface {
-	Int | Rune | Byte
-}
-
-// 数值类型约束。
-type Number interface {
-	Integer | Float
-}
-
-// 切片成员类型约束。
-type Itemer interface {
-	any | Byte | Rune | Int | Float | String
-}
 
 // 退出类型定义
 const (
@@ -652,17 +646,17 @@ func _SPREAD(a *Actuator, _ []any, _ any, vs ...any) []any {
 
 	switch x := vs[0].(type) {
 	case Runes:
-		return toAnys(x)
+		return cbase.ToAnys(x)
 	case Bytes:
-		return toAnys(x)
+		return cbase.ToAnys(x)
 	case []any:
 		return x
 	case []Int:
-		return toAnys(x)
+		return cbase.ToAnys(x)
 	case []Float:
-		return toAnys(x)
+		return cbase.ToAnys(x)
 	case []String:
-		return toAnys(x)
+		return cbase.ToAnys(x)
 	}
 	panic(neverToHere)
 }
@@ -1549,15 +1543,15 @@ func _ANYS(a *Actuator, aux []any, _ any, vs ...any) []any {
 	case instor.ItemAny:
 		return []any{convToAnys(vs[0])}
 	case instor.ItemByte:
-		return []any{anysTo[Byte](vs[0])}
+		return []any{anysTo[Byte](vs[0].([]any))}
 	case instor.ItemRune:
-		return []any{anysTo[Rune](vs[0])}
+		return []any{anysTo[Rune](vs[0].([]any))}
 	case instor.ItemInt:
-		return []any{anysTo[Int](vs[0])}
+		return []any{anysTo[Int](vs[0].([]any))}
 	case instor.ItemFloat:
-		return []any{anysTo[Float](vs[0])}
+		return []any{anysTo[Float](vs[0].([]any))}
 	case instor.ItemString:
-		return []any{anysTo[String](vs[0])}
+		return []any{anysTo[String](vs[0].([]any))}
 	}
 	panic(neverToHere)
 }
@@ -2330,11 +2324,11 @@ func _MATCH(a *Actuator, aux []any, _ any, vs ...any) []any {
 
 	switch aux[0].(int) {
 	case 'g':
-		return []any{matchAll(vs[0], re)}
+		return []any{cbase.MatchAll(vs[0], re)}
 	case 'G':
-		return []any{matchEvery(vs[0], re)}
+		return []any{cbase.MatchEvery(vs[0], re)}
 	}
-	all := match(vs[0], re)
+	all := cbase.Match(vs[0], re)
 
 	if len(all) > 1 {
 		return []any{all}
@@ -3023,17 +3017,6 @@ func ScriptRun(a *Actuator) (x any) {
 // 私有辅助
 ///////////////////////////////////////////////////////////////////////////////
 
-// 将特定类型的切片转为any切片。
-// 确定会返回一个切片，空切片非nil。
-func toAnys[T Itemer](data []T) []any {
-	buf := make([]any, len(data))
-
-	for i, v := range data {
-		buf[i] = v
-	}
-	return buf
-}
-
 // 将any切片转换到特定类型。
 func anysTo[T Itemer](data []any) []T {
 	buf := make([]T, len(data))
@@ -3358,17 +3341,17 @@ func convToRune[T Int | Float](v T) Rune {
 func convToAnys(data any) []any {
 	switch x := data.(type) {
 	case Runes:
-		return toAnys(x)
+		return cbase.ToAnys(x)
 	case Bytes:
-		return toAnys(x)
+		return cbase.ToAnys(x)
 	case []any:
 		return x
 	case []Int:
-		return toAnys(x)
+		return cbase.ToAnys(x)
 	case []Float:
-		return toAnys(x)
+		return cbase.ToAnys(x)
 	case []String:
-		return toAnys(x)
+		return cbase.ToAnys(x)
 	}
 	panic(neverToHere)
 }
@@ -3505,37 +3488,6 @@ func newCopy[T any](s []T, ext int) []T {
 
 	copy(buf, s)
 	return buf
-}
-
-// 查找首个正则匹配。
-// 返回一个切片，其中首个成员为完整匹配，后续为可能有的子匹配。
-// 目标 target 支持字符串或字节序列。
-func match(target any, re *regexp.Regexp) []any {
-	if x, ok := target.(string); ok {
-		return toAnys(re.FindStringSubmatch(x))
-	}
-	return toAnys(re.FindSubmatch(target.([]byte)))
-}
-
-// 查找全部匹配。
-// 仅查找完整匹配的结果，子匹配会被简单忽略。
-// 目标 target 支持字符串或字节序列。
-func matchAll(target any, re *regexp.Regexp) []any {
-	if x, ok := target.(string); ok {
-		return toAnys(re.FindAllString(x, -1))
-	}
-	return toAnys(re.FindAll(target.([]byte), -1))
-}
-
-// 查找所有的匹配。
-// 会检查每一个匹配的子匹配，返回包含每组匹配的子匹配的一个二维切片。
-// 如果子匹配式本身就不存在，每组匹配依然是一个切片结果（即整体依然为二维）。
-// 目标 target 支持字符串或字节序列。
-func matchEvery(target any, re *regexp.Regexp) []any {
-	if x, ok := target.(string); ok {
-		return toAnys(re.FindAllStringSubmatch(x, -1))
-	}
-	return toAnys(re.FindAllSubmatch(target.([]byte), -1))
 }
 
 // 获取字典的键值集。
